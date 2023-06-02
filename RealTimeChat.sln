@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8319BC87-CE17-4657-8A23-A77706513D58}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "RealTimeChat.Client", "src\RealTimeChat.Client\RealTimeChat.Client.fsproj", "{34364D15-4175-4AD2-9AA2-F8857AA52305}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "RealTimeChat.Server", "src\RealTimeChat.Server\RealTimeChat.Server.fsproj", "{9EF852F3-C01C-4D9A-B102-BA6FB8CBC6BB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "RealTimeChat.Shared", "src\RealTimeChat.Shared\RealTimeChat.Shared.fsproj", "{87474B11-F61B-4FE2-ACEC-E03AFC6B160F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{34364D15-4175-4AD2-9AA2-F8857AA52305}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34364D15-4175-4AD2-9AA2-F8857AA52305}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34364D15-4175-4AD2-9AA2-F8857AA52305}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34364D15-4175-4AD2-9AA2-F8857AA52305}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EF852F3-C01C-4D9A-B102-BA6FB8CBC6BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EF852F3-C01C-4D9A-B102-BA6FB8CBC6BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EF852F3-C01C-4D9A-B102-BA6FB8CBC6BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EF852F3-C01C-4D9A-B102-BA6FB8CBC6BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87474B11-F61B-4FE2-ACEC-E03AFC6B160F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87474B11-F61B-4FE2-ACEC-E03AFC6B160F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87474B11-F61B-4FE2-ACEC-E03AFC6B160F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87474B11-F61B-4FE2-ACEC-E03AFC6B160F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{34364D15-4175-4AD2-9AA2-F8857AA52305} = {8319BC87-CE17-4657-8A23-A77706513D58}
+		{9EF852F3-C01C-4D9A-B102-BA6FB8CBC6BB} = {8319BC87-CE17-4657-8A23-A77706513D58}
+		{87474B11-F61B-4FE2-ACEC-E03AFC6B160F} = {8319BC87-CE17-4657-8A23-A77706513D58}
+	EndGlobalSection
+EndGlobal

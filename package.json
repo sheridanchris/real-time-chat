@@ -1,0 +1,10 @@
+{
+    "private": true,
+    "scripts": {
+        "postinstall": "dotnet tool restore",
+        "start": "dotnet fable watch src/RealTimeChat.Client -o src/RealTimeChat.Client/.fable-build --run vite"
+    },
+    "devDependencies": {
+        "vite": "^4.3.9"
+    }
+}
