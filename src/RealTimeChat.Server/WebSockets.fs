@@ -7,7 +7,7 @@ open Elmish.Bridge
 open Shared
 
 type State =
-  | Disconnected
+  | NotInitialized
   | User of User
 
 type ServerMsg =
@@ -21,7 +21,10 @@ let askCmd message actor =
 
 let hub = ServerHub<State, ServerMsg, RemoteClientMsg>()
 
-let init clientDispatch = fun () -> Disconnected, Cmd.none
+let init clientDispatch =
+  fun () ->
+    clientDispatch RemoteClientMsg.ConnectionEstablished
+    NotInitialized, Cmd.none
 
 let pickRandomColor () =
   let options = [ Red; Green; Blue; Orange; Yellow; Purple; Pink ]
@@ -33,24 +36,45 @@ let sendClientIfInRoom room client =
   | _ -> false
 
 let update clientDispatch serverMsg state =
+  printfn $"Processing: %A{serverMsg}"
+
   match state with
-  | Disconnected -> Disconnected, Cmd.none
-  | User user ->
+  | NotInitialized ->
     match serverMsg with
-    | ClosedConnection ->
-      match user.Room with
-      | None -> Disconnected, Cmd.none
-      | Some _ -> Disconnected, askCmd (Actor.Command.LeaveRoom {| user = user |}) Actor.chat
+    | ClosedConnection -> NotInitialized, Cmd.none
+    | GotActorResponse _ -> NotInitialized, Cmd.none
     | ServerMsg msg ->
       match msg with
-      | RemoteServerMessage.SetNickname info ->
-        User {
+      | RemoteServerMessage.InitializeUser info ->
+        let user = {
           Id = UserId(Guid.NewGuid())
           Nickname = info.nickname
           Room = None
           Color = pickRandomColor ()
-        },
-        Cmd.none
+        }
+
+        clientDispatch (RemoteClientMsg.CurrentUserInitialized user)
+        User user, Cmd.none
+      | _ -> NotInitialized, Cmd.none
+  | User user ->
+    match serverMsg with
+    | ClosedConnection ->
+      match user.Room with
+      | None -> NotInitialized, Cmd.none
+      // I shouldn't be expecting a reply here... so `asking` shouldn't matter.
+      | Some _ -> NotInitialized, askCmd (Actor.Command.LeaveRoom {| user = user |}) Actor.chat
+    | ServerMsg msg ->
+      match msg with
+      // Can't initialize if you're already intialized
+      | RemoteServerMessage.InitializeUser info -> state, Cmd.none
+      // Can only set nickname when you're not in a room.
+      | RemoteServerMessage.UpdateNickname info ->
+        match user.Room with
+        | Some _ -> state, Cmd.none
+        | None ->
+          let user = { user with Nickname = info.nickname }
+          clientDispatch (RemoteClientMsg.CurrentUserInfoUpdated user)
+          User user, Cmd.none
       | RemoteServerMessage.JoinRoom info ->
         state, askCmd (Actor.Command.JoinRoom {| roomId = info.roomId; user = user |}) Actor.chat
       | RemoteServerMessage.SendMessage info ->
@@ -70,6 +94,7 @@ let update clientDispatch serverMsg state =
             |})
             Actor.chat
       | RemoteServerMessage.CreateRoom -> state, askCmd (Actor.Command.CreateRoom {| user = user |}) Actor.chat
+      | RemoteServerMessage.Disconnect -> state, askCmd (Actor.Command.LeaveRoom {| user = user |}) Actor.chat
     | GotActorResponse response ->
       match response with
       | Actor.ActorResponse.CommandFailed _ -> state, Cmd.none
@@ -88,7 +113,8 @@ let update clientDispatch serverMsg state =
                 hub.SendClientIf (sendClientIfInRoom info.roomId) (RemoteClientMsg.AddMessage info.message)
                 user
               | Actor.Event.UserJoinedRoom info ->
-                hub.SendClientIf (sendClientIfInRoom info.roomId) (RemoteClientMsg.AddUser info.user)
+                clientDispatch (RemoteClientMsg.RoomInfo info.room)
+                hub.SendClientIf (sendClientIfInRoom info.room.Id) (RemoteClientMsg.AddUser info.user)
                 User info.user
               | Actor.Event.UserLeftRoom info ->
                 hub.SendClientIf (sendClientIfInRoom info.roomId) (RemoteClientMsg.RemoveUser info.user)

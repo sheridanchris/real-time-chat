@@ -39,6 +39,9 @@ type Room = {
 
 [<RequireQualifiedAccess>]
 type RemoteClientMsg =
+  | ConnectionEstablished
+  | CurrentUserInitialized of User
+  | CurrentUserInfoUpdated of User
   | RoomInfo of Room
   | AddMessage of Message
   | AddUser of User
@@ -46,9 +49,11 @@ type RemoteClientMsg =
 
 [<RequireQualifiedAccess>]
 type RemoteServerMessage =
-  | SetNickname of {| nickname: string |}
+  | InitializeUser of {| nickname: string |}
+  | UpdateNickname of {| nickname: string |}
   | CreateRoom
   | JoinRoom of {| roomId: RoomId |}
   | SendMessage of {| message: string |}
+  | Disconnect
 
 let endpoint = "/ws"

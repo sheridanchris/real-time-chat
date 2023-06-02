@@ -12,7 +12,7 @@ type Command =
   | QueryRoomData of {| roomId: RoomId |}
 
 type Event =
-  | UserJoinedRoom of {| roomId: RoomId; user: User |}
+  | UserJoinedRoom of {| room: Room; user: User |}
   | UserLeftRoom of {| roomId: RoomId; user: User |}
   | MessageSent of {| roomId: RoomId; message: Message |}
   | RoomCreated of {| room: Room; user: User |}
@@ -46,7 +46,7 @@ let processCommand command rooms =
       EventsOccurred(
         [
           UserJoinedRoom {|
-            roomId = room.Id
+            room = room
             user = {
               command.user with
                   Room = Some room.Id
@@ -127,7 +127,7 @@ let processEvent rooms event =
   match event with
   | UserJoinedRoom info ->
     rooms
-    |> mapRooms info.roomId (fun room -> {
+    |> mapRooms info.room.Id (fun room -> {
       room with
           Users = info.user :: room.Users
     })

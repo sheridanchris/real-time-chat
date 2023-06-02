@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Context.fs" />
+    <Compile Include="Homepage.fs" />
+    <Compile Include="Chatroom.fs" />
     <Compile Include="App.fs" />
   </ItemGroup>
 
