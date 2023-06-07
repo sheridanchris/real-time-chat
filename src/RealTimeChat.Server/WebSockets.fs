@@ -11,13 +11,9 @@ type State =
   | User of User
 
 type ServerMsg =
+  | GotActorResponse of User
   | ServerMsg of RemoteServerMessage
-  | GotActorResponse of Actor.ActorResponse
   | ClosedConnection
-
-let askCmd message actor =
-  let ask message actor = actor <? message
-  Cmd.OfAsync.perform (ask message) actor GotActorResponse
 
 let hub = ServerHub<State, ServerMsg, RemoteClientMsg>()
 
@@ -35,14 +31,24 @@ let sendClientIfInRoom room client =
   | User user when user.Room = Some room -> true
   | _ -> false
 
+let ask msg actor = actor <? msg
+let tell msg actor = actor <! msg
+
+let askCmd msg =
+  Cmd.OfAsync.perform (ask msg) Actor.chat GotActorResponse
+
+let actorCommand clientDispatch command : Actor.ChatCommand = {
+  Command = command
+  SendMessageToClient = clientDispatch
+  SendMessageToRoom = fun roomId msg -> hub.SendClientIf (sendClientIfInRoom roomId) msg
+}
+
 let update clientDispatch serverMsg state =
   printfn $"Processing: %A{serverMsg}"
 
   match state with
   | NotInitialized ->
     match serverMsg with
-    | ClosedConnection -> NotInitialized, Cmd.none
-    | GotActorResponse _ -> NotInitialized, Cmd.none
     | ServerMsg msg ->
       match msg with
       | RemoteServerMessage.InitializeUser info ->
@@ -55,14 +61,15 @@ let update clientDispatch serverMsg state =
 
         clientDispatch (RemoteClientMsg.CurrentUserInitialized user)
         User user, Cmd.none
-      | _ -> NotInitialized, Cmd.none
+
+      | _ -> state, Cmd.none
+    | _ -> state, Cmd.none
   | User user ->
     match serverMsg with
+    | GotActorResponse state -> User state, Cmd.none
     | ClosedConnection ->
-      match user.Room with
-      | None -> NotInitialized, Cmd.none
-      // I shouldn't be expecting a reply here... so `asking` shouldn't matter.
-      | Some _ -> NotInitialized, askCmd (Actor.Command.LeaveRoom {| user = user |}) Actor.chat
+      tell (actorCommand clientDispatch (Actor.Command.CloseConnection {| user = user |})) Actor.chat
+      NotInitialized, Cmd.none
     | ServerMsg msg ->
       match msg with
       // Can't initialize if you're already intialized
@@ -76,50 +83,25 @@ let update clientDispatch serverMsg state =
           clientDispatch (RemoteClientMsg.CurrentUserInfoUpdated user)
           User user, Cmd.none
       | RemoteServerMessage.JoinRoom info ->
-        state, askCmd (Actor.Command.JoinRoom {| roomId = info.roomId; user = user |}) Actor.chat
+        state, askCmd (actorCommand clientDispatch (Actor.Command.JoinRoom {| roomId = info.roomId; user = user |}))
       | RemoteServerMessage.SendMessage info ->
         match user.Room with
         | None -> state, Cmd.none
         | Some roomId ->
           state,
-          askCmd
-            (Actor.Command.SendMessage {|
-              roomId = roomId
-              message =
-                Message.ChatMessage {|
-                  senderId = user.Id
-                  senderNickname = user.Nickname
-                  message = info.message
-                |}
-            |})
-            Actor.chat
-      | RemoteServerMessage.CreateRoom -> state, askCmd (Actor.Command.CreateRoom {| user = user |}) Actor.chat
-      | RemoteServerMessage.Disconnect -> state, askCmd (Actor.Command.LeaveRoom {| user = user |}) Actor.chat
-    | GotActorResponse response ->
-      match response with
-      | Actor.ActorResponse.CommandFailed _ -> state, Cmd.none
-      | Actor.ActorResponse.EventsOccurred events ->
-        let state =
-          List.fold
-            (fun user event ->
-              match event with
-              | Actor.Event.RoomCreated info ->
-                clientDispatch (RemoteClientMsg.RoomInfo info.room)
-                User info.user
-              | Actor.Event.RoomDataQueried info ->
-                clientDispatch (RemoteClientMsg.RoomInfo info.room)
-                user
-              | Actor.Event.MessageSent info ->
-                hub.SendClientIf (sendClientIfInRoom info.roomId) (RemoteClientMsg.AddMessage info.message)
-                user
-              | Actor.Event.UserJoinedRoom info ->
-                clientDispatch (RemoteClientMsg.RoomInfo info.room)
-                hub.SendClientIf (sendClientIfInRoom info.room.Id) (RemoteClientMsg.AddUser info.user)
-                User info.user
-              | Actor.Event.UserLeftRoom info ->
-                hub.SendClientIf (sendClientIfInRoom info.roomId) (RemoteClientMsg.RemoveUser info.user)
-                User info.user)
-            state
-            events
-
-        state, Cmd.none
+          askCmd (
+            actorCommand
+              clientDispatch
+              (Actor.Command.SendMessage {|
+                roomId = roomId
+                message =
+                  Message.ChatMessage {|
+                    sender = user
+                    message = info.message
+                  |}
+              |})
+          )
+      | RemoteServerMessage.CreateRoom ->
+        state, askCmd (actorCommand clientDispatch (Actor.Command.CreateRoom {| user = user |}))
+      | RemoteServerMessage.Disconnect ->
+        state, askCmd (actorCommand clientDispatch (Actor.Command.LeaveRoom {| user = user |}))

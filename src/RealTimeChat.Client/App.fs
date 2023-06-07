@@ -1,9 +1,12 @@
 ﻿open Sutil
 open Sutil.CoreElements
+open type Feliz.length
+open Fable.Core.JsInterop
 
 let view () =
   Html.div [
     disposeOnUnmount [ Context.globalContext ]
+    Attr.className "h-screen w-screen"
     Bind.el (
       Context.globalContext .> Context.currentView,
       function
@@ -12,4 +15,5 @@ let view () =
     )
   ]
 
+importSideEffects "./styles.css"
 view () |> Program.mount

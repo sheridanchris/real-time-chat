@@ -24,12 +24,7 @@ type User = {
 [<RequireQualifiedAccess>]
 type Message =
   | SystemMessage of {| message: string |}
-  | ChatMessage of
-    {|
-      senderId: UserId
-      senderNickname: string
-      message: string
-    |}
+  | ChatMessage of {| sender: User; message: string |}
 
 type Room = {
   Id: RoomId
@@ -45,7 +40,7 @@ type RemoteClientMsg =
   | RoomInfo of Room
   | AddMessage of Message
   | AddUser of User
-  | RemoveUser of User
+  | RemoveUser of UserId
 
 [<RequireQualifiedAccess>]
 type RemoteServerMessage =

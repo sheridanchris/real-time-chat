@@ -72,7 +72,7 @@ let update msg model =
               CurrentView = Chatroom { room with Users = user :: room.Users }
         },
         Cmd.none
-    | RemoteClientMsg.RemoveUser user ->
+    | RemoteClientMsg.RemoveUser userId ->
       match model.CurrentView with
       | Homepage -> model, Cmd.none
       | Chatroom room ->
@@ -81,7 +81,7 @@ let update msg model =
               CurrentView =
                 Chatroom {
                   room with
-                      Users = room.Users |> List.filter (fun cUser -> user.Id <> cUser.Id)
+                      Users = room.Users |> List.filter (fun cUser -> userId <> cUser.Id)
                 }
         },
         Cmd.none

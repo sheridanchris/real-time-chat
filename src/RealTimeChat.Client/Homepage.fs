@@ -58,21 +58,51 @@ let update msg model =
         Cmd.ofEffect (fun _ -> Bridge.Send(RemoteServerMessage.JoinRoom {| roomId = roomId |}))
       ]
 
+let input elements =
+  Html.input [
+    Attr.className "border border-gray-900 rounded-sm px-1.5 py-1.5 placeholder-gray-600"
+    yield! elements
+  ]
+
+let button elements =
+  Html.button [
+    Attr.className "border rounded-sm border-green-600 bg-green-600 text-white px-1.5 py-1.5"
+    yield! elements
+  ]
+
 let view () =
   let model, dispatch = () |> Store.makeElmish init update ignore
 
-  fragment [
+  Html.div [
     disposeOnUnmount [ model ]
-    Html.input [
-      Attr.id "nickname"
-      Attr.placeholder "nickname"
-      Attr.value (model .> nickname, SetNickname >> dispatch)
+    Attr.className "flex flex-col h-screen w-screen justify-center items-center"
+
+    Html.div [
+      Attr.className "flex flex-col w-1/4 gap-y-2.5"
+
+      input [
+        Attr.id "nickname"
+        Attr.placeholder "nickname"
+        Attr.value (model .> nickname, SetNickname >> dispatch)
+      ]
+      input [
+        Attr.id "room-code"
+        Attr.className "border border-gray-900 rounded-sm px-1.5 py-1.5 placeholder-gray-600"
+        Attr.placeholder "room code"
+        Attr.value (model .> roomCode, SetRoomCode >> dispatch)
+      ]
+      Html.div [
+        Attr.className "flex flex-row gap-x-2.5 w-full"
+        button [
+          Attr.className "w-2/4"
+          Attr.text "Create room"
+          onClick (fun _ -> dispatch CreateRoom) []
+        ]
+        button [
+          Attr.className "w-2/4"
+          Attr.text "Join room"
+          onClick (fun _ -> dispatch JoinRoom) []
+        ]
+      ]
     ]
-    Html.input [
-      Attr.id "room-code"
-      Attr.placeholder "room code"
-      Attr.value (model .> roomCode, SetRoomCode >> dispatch)
-    ]
-    Html.button [ Attr.text "Join room"; onClick (fun _ -> dispatch JoinRoom) [] ]
-    Html.button [ Attr.text "Create room"; onClick (fun _ -> dispatch CreateRoom) [] ]
   ]
